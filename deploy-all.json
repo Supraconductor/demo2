@@ -1,0 +1,69 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "prefix": {
+          "type": "string"
+        },
+        "networkSecurityGroupName": {
+            "type": "string"
+          },
+        "virtualMachineName": {
+            "type": "string"
+        },
+        "virtualMachineSize": {
+            "type": "string",
+            "allowedValues": [
+              "Standard_D1_v2",
+              "Standard_D2_v2"
+            ]
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+    },
+    "resources": [
+        {
+            "name": "net",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "properties": {
+                "mode":"Incremental",
+                "templateLink":{
+                    "uri": "https://raw.githubusercontent.com/Supraconductor/demo2/master/deploy-net.json"
+                },
+                "parameters":{
+                    "prefix":{"value": "[parameters('prefix')]"},
+                    "networkSecurityGroupName":{"value": "[parameters('networkSecurityGroupName')]"}
+                }
+            }
+            
+        },
+        {
+            "name": "vm",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "properties": {
+                "mode":"Incremental",
+                "templateLink":{
+                    "uri": "https://raw.githubusercontent.com/Supraconductor/demo2/master/deploy-vm.json"
+                },
+                "parameters":{
+                    "prefix":{"value": "[parameters('prefix')]"},
+                    "virtualMachineName":{"value": "[parameters('virtualMachineName')]"},
+                    "virtualMachineSize":{"value": "[parameters('virtualMachineSize')]"},
+                    "adminUsername":{"value": "[parameters('adminUsername')]"},
+                    "adminPassword":{"value": "[parameters('adminPassword')]"}
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'net')]"
+            ]
+        }
+    ]
+  }
