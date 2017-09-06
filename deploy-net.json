@@ -1,0 +1,85 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "location": {
+          "type": "string",
+          "defaultValue": "canada east"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "virtualNetworkName": {
+          "type": "string",
+          "defaultValue": "[concat(parameters('prefix'), '-', 'vnet')]"
+      },
+      "networkSecurityGroupName": {
+          "type": "string"
+        },
+      "addressPrefix": {
+          "type": "string",
+          "defaultValue": "10.1.2.0/24"
+      },
+      "subnetName": {
+          "type": "string",
+          "defaultValue": "default"
+      },
+      "subnetPrefix": {
+          "type": "string",
+          "defaultValue": "10.1.2.0/24"
+      }
+  },
+  "variables": {
+  },
+  "resources": [
+      {
+          "name": "[parameters('virtualNetworkName')]",
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2016-12-01",
+          "location": "[parameters('location')]",
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "[parameters('addressPrefix')]"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "[parameters('subnetName')]",
+                      "properties": {
+                          "addressPrefix": "[parameters('subnetPrefix')]",
+                          "networkSecurityGroup": {
+                              "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                          }
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "name": "[parameters('networkSecurityGroupName')]",
+          "type": "Microsoft.Network/networkSecurityGroups",
+          "apiVersion": "2016-09-01",
+          "location": "[parameters('location')]",
+          "properties": {
+              "securityRules": [
+                  {
+                      "name": "default-allow-rdp",
+                      "properties": {
+                          "priority": 1000,
+                          "sourceAddressPrefix": "*",
+                          "protocol": "Tcp",
+                          "destinationPortRange": "3389",
+                          "access": "Allow",
+                          "direction": "Inbound",
+                          "sourcePortRange": "*",
+                          "destinationAddressPrefix": "*"
+                      }
+                  }
+              ]
+          }
+      }
+  ],
+  "outputs": {
+  }
+}

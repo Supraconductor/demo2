@@ -1,0 +1,139 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "location": {
+          "type": "string",
+          "defaultValue": "canada east"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "virtualMachineName": {
+          "type": "string"
+      },
+      "virtualMachineSize": {
+          "type": "string",
+          "allowedValues": [
+            "Standard_D1_v2",
+            "Standard_D2_v2"
+          ]
+      },
+      "adminUsername": {
+          "type": "string"
+      },
+      "virtualNetworkName": {
+          "type": "string",
+          "defaultValue": "[concat(parameters('prefix'), '-', 'vnet')]"
+      },
+      "networkInterfaceName": {
+          "type": "string",
+          "defaultValue": "[concat(parameters('prefix'), '-', parameters('virtualMachineName'), '-', 'nic-1')]"
+      },
+      "adminPassword": {
+          "type": "securestring"
+      },
+      "subnetName": {
+          "type": "string",
+          "defaultValue": "default"
+      },
+      "publicIpAddressName": {
+          "type": "string",
+          "defaultValue": "[concat(parameters('prefix'), '-', parameters('virtualMachineName'), '-', 'pip-1')]" 
+      },
+      "publicIpAddressType": {
+          "type": "string",
+          "defaultValue": "Dynamic" 
+      }
+  },
+  "variables": {
+      "vnetId": "[resourceId('jf-demo3','Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]"
+  },
+  "resources": [
+      {
+          "name": "[concat(parameters('prefix'), '-', parameters('virtualMachineName'))]",
+          "type": "Microsoft.Compute/virtualMachines",
+          "apiVersion": "2016-04-30-preview",
+          "location": "[parameters('location')]",
+          "tags": {
+              "project":"demos"
+          },
+          "dependsOn": [
+              "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'))]"
+          ],
+          "properties": {
+              "osProfile": {
+                  "computerName": "[parameters('virtualMachineName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]"
+              },
+              "hardwareProfile": {
+                  "vmSize": "[parameters('virtualMachineSize')]"
+              },
+              "storageProfile": {
+                "imageReference": {
+                    "publisher": "CoreOS",
+                    "offer": "CoreOS",
+                    "sku": "Stable",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                      "createOption": "FromImage",
+                      "managedDisk": {
+                          "storageAccountType": "Standard_LRS"
+                      }
+                  },
+                  "dataDisks": []
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+                      }
+                  ]
+              }
+          }
+      },
+      {
+          "name": "[parameters('networkInterfaceName')]",
+          "type": "Microsoft.Network/networkInterfaces",
+          "apiVersion": "2016-09-01",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+              "[concat('Microsoft.Network/publicIpAddresses/', parameters('publicIpAddressName'))]"
+          ],
+          "properties": {
+              "ipConfigurations": [
+                  {
+                      "name": "ipconfig1",
+                      "properties": {
+                          "subnet": {
+                              "id": "[variables('subnetRef')]"
+                          },
+                          "privateIPAllocationMethod": "Dynamic",
+                          "publicIpAddress": {
+                              "id": "[resourceId('Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]"
+                          }
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "name": "[parameters('publicIpAddressName')]",
+          "type": "Microsoft.Network/publicIPAddresses",
+          "apiVersion": "2017-06-01",
+          "location": "[parameters('location')]",
+          "properties": {
+              "publicIPAllocationMethod": "[parameters('publicIpAddressType')]"
+          }
+      }
+  ],
+  "outputs": {
+      "adminUsername": {
+          "type": "string",
+          "value": "[parameters('adminUsername')]"
+      }
+  }
+}
